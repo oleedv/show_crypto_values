@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from "react";
-import { Card, Row, Col, Avatar, Image, Select } from 'antd';
+import { Card, Row, Col, Avatar, Image, Select, Tooltip } from 'antd';
 import { CaretUpOutlined, CaretDownOutlined, LoadingOutlined } from '@ant-design/icons'
 import 'antd/dist/antd.css';
 
@@ -175,14 +175,14 @@ const currencyRates = {
     ZMK: 10712.152296,
     ZMW: 26.3404,
     ZWL: 383.206152
-} // fetched 1618125494
+} // fetched at unix time 1618125494, api.coincap.io/v2/rates
 const [assets, setAssets] = useState()
 const [currency, setCurrency] = useState("USD")
 const [priceUsd, setPriceUsd] = useState(10.000)
 
 
     useEffect(() => {
-            axios.get('https://api.coincap.io/v2/assets')
+            axios.get("https://api.coincap.io/v2/assets")
             .then(function (response) {
                 setAssets(response.data.data)
                 //console.log(response.data.data);
@@ -197,30 +197,31 @@ const [priceUsd, setPriceUsd] = useState(10.000)
         currency: currency
     });
 
-    const rateConveter = (priceUsd, rate) => {
+    const rateConverter = (priceUsd, rate) => {
         return currencyFormatter.format(parseInt(priceUsd) * rate)
-        // since my rates are from EURO, I first need to convert to EUR then to the new rate
+}
+    const newRate = () => {
+
     }
 
     const { Option } = Select;
 
     function onChange(value) {
         setCurrency(value)
-        console.log(`selected ${value}`);
         console.log(currency)
-    }
-    function onBlur() {
-        console.log('blur');
-    }
-
-    function onFocus() {
-        console.log('focus');
     }
 
     function onSearch(val) {
         console.log('search:', val);
     }
-    console.log()
+    const content = (
+        <div>
+            <p>Content</p>
+            <p>Content</p>
+        </div>
+    );
+    console.log(assets)
+
     const span = 4; // just for development, might keep if
     return (
         <>
@@ -230,8 +231,6 @@ const [priceUsd, setPriceUsd] = useState(10.000)
                 placeholder="USD"
                 optionFilterProp="children"
                 onChange={onChange}
-                onFocus={onFocus}
-                onBlur={onBlur}
                 onSearch={onSearch}
                 filterOption={(input, option) =>
                     option.children.toLowerCase().indexOf(input.toLowerCase()) >= 0}>
@@ -251,7 +250,9 @@ const [priceUsd, setPriceUsd] = useState(10.000)
             {assets && assets.length !== 0 ? assets.map((assets) => (
                     <Card key={assets.id}>
                         <Row gutter={{ xs: 8, sm: 16, md: 24, lg: 32 }}>
-                            <Col className="gutter-row" span={span} style={{fontSize: 12}}>{assets.rank}.</Col>
+                            <Tooltip title="Rank">
+                                <Col className="gutter-row" span={span} style={{fontSize: 12}}>{assets.rank}.</Col>
+                            </Tooltip>
                             <Col className="gutter-row" span={span}>
                                 {/*<LoadingOutlined /> Replace this with avatar img if link cant fetch a photo, fallback*/}
                                 <Avatar
@@ -265,21 +266,28 @@ const [priceUsd, setPriceUsd] = useState(10.000)
                                 <div style={{fontSize: "11px", color: "#5e5e5e"}}>{assets.symbol}</div>
                             </Col>
                             <Col className="gutter-row" span={span}>
-                                {currencyFormatter.format(assets.priceUsd)}
+                                <Tooltip title="Price">
+                                    {currencyFormatter.format(assets.priceUsd)}
+                                </Tooltip>
+                                {/*<br/>*/}
+                                {/*{rateConverter(assets.priceUsd, currencyRates.NOK)} dont know how to get this to work */}
                                 <br/>
-                                {rateConveter(assets.priceUsd, currencyRates.NOK)}
-                                <br/>
-                                {assets.changePercent24Hr < 0 ?
-                                    <div style={{color: "red"}}><CaretDownOutlined />{assets.changePercent24Hr.slice(0, -12) + "%"}</div> :
-                                   <div style={{color: "green"}}><CaretUpOutlined />{assets.changePercent24Hr.slice(0, -12) + "%"}</div>}
+                                <Tooltip title="Value changed last 24h">
+                                    {assets.changePercent24Hr < 0 ?
+                                        <div style={{color: "red"}}><CaretDownOutlined />{assets.changePercent24Hr.slice(0, -12) + "%"}</div> :
+                                        <div style={{color: "green"}}><CaretUpOutlined />{assets.changePercent24Hr.slice(0, -12) + "%"}</div>}
+                                </Tooltip>
                             </Col>
-                            <Col className="gutter-row" span={span}>
-                                {new Intl.NumberFormat('en-US').format(assets.supply) + " / "}
-                                {new Intl.NumberFormat('en-US').format(assets.maxSupply)}
-                            </Col>
+
+                            <Tooltip title="Supply / max supply">
+                                <Col className="gutter-row" span={span}>
+                                    {new Intl.NumberFormat('en-US').format(assets.supply) + " / "}
+                                    {new Intl.NumberFormat('en-US').format(assets.maxSupply)}
+                                </Col>
+                            </Tooltip>
                         </Row>
                     </Card>
-            )): "Loading.." }
+            )): <><LoadingOutlined /> Loading in latest prices.. </>}
         </>
     )
 };
